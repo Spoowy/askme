@@ -9,38 +9,61 @@ type Conversation = { id: number; title: string; created_at: string };
 
 const FREE_LIMIT = 10;
 
-// Simple markdown: **bold**, *italic*, `code`
+// Format markdown: **bold**, *italic*, `code`, ```code blocks```
 function formatMarkdown(text: string) {
+  // Handle code blocks first
+  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g;
   const parts: (string | JSX.Element)[] = [];
-  let remaining = text;
+  let lastIndex = 0;
+  let match;
   let key = 0;
 
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(...formatInline(text.slice(lastIndex, match.index), key));
+      key += 100;
+    }
+    parts.push(
+      <pre key={key++} className="bg-stone-100 dark:bg-stone-900 p-3 rounded-lg overflow-x-auto my-2 text-sm">
+        <code>{match[2].trim()}</code>
+      </pre>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(...formatInline(text.slice(lastIndex), key));
+  }
+
+  return parts;
+}
+
+// Format inline: **bold**, *italic*, `code`
+function formatInline(text: string, startKey: number): (string | JSX.Element)[] {
+  const parts: (string | JSX.Element)[] = [];
+  let remaining = text;
+  let key = startKey;
+
   while (remaining.length > 0) {
-    // Match **bold**, *italic*, or `code`
     const match = remaining.match(/(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/);
     if (!match || match.index === undefined) {
       parts.push(remaining);
       break;
     }
-
-    // Add text before match
-    if (match.index > 0) {
-      parts.push(remaining.slice(0, match.index));
-    }
-
-    // Add formatted element
-    if (match[2]) {
-      parts.push(<strong key={key++} className="font-semibold">{match[2]}</strong>);
-    } else if (match[3]) {
-      parts.push(<em key={key++}>{match[3]}</em>);
-    } else if (match[4]) {
-      parts.push(<code key={key++} className="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-sm">{match[4]}</code>);
-    }
-
+    if (match.index > 0) parts.push(remaining.slice(0, match.index));
+    if (match[2]) parts.push(<strong key={key++} className="font-semibold">{match[2]}</strong>);
+    else if (match[3]) parts.push(<em key={key++}>{match[3]}</em>);
+    else if (match[4]) parts.push(<code key={key++} className="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-sm font-mono">{match[4]}</code>);
     remaining = remaining.slice(match.index + match[0].length);
   }
-
   return parts;
+}
+
+// Check if this is the last assistant message in a consecutive run
+function isLastInGroup(messages: Message[], index: number): boolean {
+  if (messages[index].role !== "assistant") return false;
+  const next = messages[index + 1];
+  return !next || next.role !== "assistant";
 }
 
 // Intro message from Erwin
