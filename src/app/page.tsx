@@ -190,19 +190,28 @@ export default function Home() {
         return;
       }
 
-      // Handle multiple messages with natural delays
+      // Handle multiple messages with natural delays based on length
       const responseMsgs: string[] = data.messages || (data.message ? [data.message] : []);
       if (responseMsgs.length > 0) {
+        setLoading(false);
         let currentMessages = [...newMessages];
 
         for (let i = 0; i < responseMsgs.length; i++) {
+          // Show typing indicator before each message (simulates writing)
+          if (i > 0) {
+            setLoading(true);
+            // Delay based on message length: ~40ms per character + random variance
+            const typingTime = Math.min(responseMsgs[i].length * 40, 3000) + Math.random() * 800;
+            await sleep(typingTime);
+          }
+
+          setLoading(false);
           currentMessages = [...currentMessages, { role: "assistant" as const, content: responseMsgs[i] }];
           setMessages(currentMessages);
 
-          // Show typing indicator and delay before next message
+          // Brief pause after message appears before typing next
           if (i < responseMsgs.length - 1) {
-            setLoading(true);
-            await sleep(600 + Math.random() * 1000); // 0.6-1.6s delay
+            await sleep(300 + Math.random() * 400);
           }
         }
 
