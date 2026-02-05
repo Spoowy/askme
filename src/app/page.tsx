@@ -89,10 +89,10 @@ function Logo({ size = "default" }: { size?: "default" | "small" }) {
   const isSmall = size === "small";
   return (
     <div className="flex items-center gap-2">
-      <div className={`${isSmall ? "w-7 h-7" : "w-8 h-8"} bg-stone-800 rounded-lg flex items-center justify-center`}>
-        <span className={`text-white ${isSmall ? "text-base" : "text-lg"} font-bold`}>?</span>
+      <div className={`${isSmall ? "w-7 h-7" : "w-8 h-8"} bg-stone-800 dark:bg-stone-200 rounded-lg flex items-center justify-center`}>
+        <span className={`text-white dark:text-stone-800 ${isSmall ? "text-base" : "text-lg"} font-bold`}>?</span>
       </div>
-      <span className={`font-semibold text-stone-800 tracking-tight ${isSmall ? "text-sm" : ""}`}>ThinkBack</span>
+      <span className={`font-semibold text-stone-800 dark:text-stone-100 tracking-tight ${isSmall ? "text-sm" : ""}`}>ThinkBack</span>
     </div>
   );
 }
@@ -190,8 +190,22 @@ export default function Home() {
         return;
       }
 
-      if (data.message) {
-        setMessages([...newMessages, { role: "assistant", content: data.message }]);
+      // Handle multiple messages with natural delays
+      const responseMsgs: string[] = data.messages || (data.message ? [data.message] : []);
+      if (responseMsgs.length > 0) {
+        let currentMessages = [...newMessages];
+
+        for (let i = 0; i < responseMsgs.length; i++) {
+          currentMessages = [...currentMessages, { role: "assistant" as const, content: responseMsgs[i] }];
+          setMessages(currentMessages);
+
+          // Show typing indicator and delay before next message
+          if (i < responseMsgs.length - 1) {
+            setLoading(true);
+            await sleep(600 + Math.random() * 1000); // 0.6-1.6s delay
+          }
+        }
+
         if (!user && data.count !== undefined) setMsgCount(data.count);
         if (user && data.conversationId && !currentConvId) {
           setCurrentConvId(data.conversationId);
