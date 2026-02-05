@@ -129,10 +129,12 @@ export async function createConversation(opts: { userId?: number; deviceId?: str
 // Get conversations by user_id or device_id
 export async function getConversations(opts: { userId?: number; deviceId?: string }): Promise<{ id: number; title: string; created_at: string }[]> {
   await ready();
+  const id = opts.userId ?? opts.deviceId;
+  if (id === undefined) return [];
   const sql = opts.userId
     ? "SELECT id, title, created_at FROM conversations WHERE user_id = ? ORDER BY created_at DESC"
     : "SELECT id, title, created_at FROM conversations WHERE device_id = ? ORDER BY created_at DESC";
-  const result = await db.execute({ sql, args: [opts.userId || opts.deviceId] });
+  const result = await db.execute({ sql, args: [id] });
   return result.rows.map((r) => ({ id: r.id as number, title: r.title as string, created_at: r.created_at as string }));
 }
 
