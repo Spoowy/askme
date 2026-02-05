@@ -429,21 +429,23 @@ export default function Home() {
                 <p className="text-2xl text-stone-600 dark:text-stone-400 font-light">What are you trying to figure out?</p>
               </div>
             )}
-            <div className="space-y-4">
+            <div className="space-y-2">
               {messages.map((m, i) =>
                 m.role === "user" ? (
-                  <div key={i} className="flex justify-end">
+                  <div key={i} className="flex justify-end mt-4">
                     <div className="max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-br-sm whitespace-pre-wrap bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 text-[15px]">
                       {m.content}
                     </div>
                   </div>
                 ) : (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <Image src="/erwin.jpg" alt="" width={32} height={32} className="rounded-full" />
+                  <div key={i} className="flex items-end gap-3">
+                    <div className="flex-shrink-0 w-8">
+                      {isLastInGroup(messages, i) && (
+                        <Image src="/erwin.jpg" alt="" width={32} height={32} className="rounded-full" />
+                      )}
                     </div>
-                    <div className="max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-tl-sm whitespace-pre-wrap bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 text-[15px]">
-                      {m.content}
+                    <div className="max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-bl-sm whitespace-pre-wrap bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 text-[15px]">
+                      {formatMarkdown(m.content)}
                     </div>
                   </div>
                 )
