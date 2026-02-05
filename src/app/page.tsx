@@ -9,6 +9,40 @@ type Conversation = { id: number; title: string; created_at: string };
 
 const FREE_LIMIT = 10;
 
+// Simple markdown: **bold**, *italic*, `code`
+function formatMarkdown(text: string) {
+  const parts: (string | JSX.Element)[] = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    // Match **bold**, *italic*, or `code`
+    const match = remaining.match(/(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/);
+    if (!match || match.index === undefined) {
+      parts.push(remaining);
+      break;
+    }
+
+    // Add text before match
+    if (match.index > 0) {
+      parts.push(remaining.slice(0, match.index));
+    }
+
+    // Add formatted element
+    if (match[2]) {
+      parts.push(<strong key={key++} className="font-semibold">{match[2]}</strong>);
+    } else if (match[3]) {
+      parts.push(<em key={key++}>{match[3]}</em>);
+    } else if (match[4]) {
+      parts.push(<code key={key++} className="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-sm">{match[4]}</code>);
+    }
+
+    remaining = remaining.slice(match.index + match[0].length);
+  }
+
+  return parts;
+}
+
 // Intro message from Erwin
 const INTRO_MESSAGE = `Most AI gives you answers. This one only asks questions.
 
