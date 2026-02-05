@@ -31,14 +31,14 @@ const initDb = async () => {
     );
     CREATE TABLE IF NOT EXISTS conversations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
+      user_id INTEGER,
+      device_id TEXT,
       title TEXT DEFAULT 'New conversation',
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS chats (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      conversation_id INTEGER,
+      conversation_id INTEGER NOT NULL,
       role TEXT NOT NULL,
       content TEXT NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -116,23 +116,23 @@ export async function getUserFromToken(token: string): Promise<{ id: number; ema
   return { id: result.rows[0].id as number, email: result.rows[0].email as string };
 }
 
-// Create a new conversation
-export async function createConversation(userId: number, title?: string): Promise<number> {
+// Create a new conversation (supports both user_id and device_id)
+export async function createConversation(opts: { userId?: number; deviceId?: string }, title?: string): Promise<number> {
   await ready();
   const result = await db.execute({
-    sql: "INSERT INTO conversations (user_id, title) VALUES (?, ?)",
-    args: [userId, title || "New conversation"],
+    sql: "INSERT INTO conversations (user_id, device_id, title) VALUES (?, ?, ?)",
+    args: [opts.userId || null, opts.deviceId || null, title || "New conversation"],
   });
   return Number(result.lastInsertRowid);
 }
 
-// Get user's conversations
-export async function getConversations(userId: number): Promise<{ id: number; title: string; created_at: string }[]> {
+// Get conversations by user_id or device_id
+export async function getConversations(opts: { userId?: number; deviceId?: string }): Promise<{ id: number; title: string; created_at: string }[]> {
   await ready();
-  const result = await db.execute({
-    sql: "SELECT id, title, created_at FROM conversations WHERE user_id = ? ORDER BY created_at DESC",
-    args: [userId],
-  });
+  const sql = opts.userId
+    ? "SELECT id, title, created_at FROM conversations WHERE user_id = ? ORDER BY created_at DESC"
+    : "SELECT id, title, created_at FROM conversations WHERE device_id = ? ORDER BY created_at DESC";
+  const result = await db.execute({ sql, args: [opts.userId || opts.deviceId] });
   return result.rows.map((r) => ({ id: r.id as number, title: r.title as string, created_at: r.created_at as string }));
 }
 
@@ -144,11 +144,11 @@ export async function updateConversationTitle(conversationId: number, title: str
 }
 
 // Save chat message
-export async function saveMessage(userId: number, conversationId: number, role: "user" | "assistant", content: string) {
+export async function saveMessage(conversationId: number, role: "user" | "assistant", content: string) {
   await ready();
   await db.execute({
-    sql: "INSERT INTO chats (user_id, conversation_id, role, content) VALUES (?, ?, ?, ?)",
-    args: [userId, conversationId, role, content],
+    sql: "INSERT INTO chats (conversation_id, role, content) VALUES (?, ?, ?)",
+    args: [conversationId, role, content],
   });
 
   // Update title from first user message
@@ -178,6 +178,15 @@ export async function deleteConversation(conversationId: number) {
   await ready();
   await db.execute({ sql: "DELETE FROM chats WHERE conversation_id = ?", args: [conversationId] });
   await db.execute({ sql: "DELETE FROM conversations WHERE id = ?", args: [conversationId] });
+}
+
+// Migrate anonymous conversations to user account
+export async function migrateConversationsToUser(deviceId: string, userId: number) {
+  await ready();
+  await db.execute({
+    sql: "UPDATE conversations SET user_id = ?, device_id = NULL WHERE device_id = ?",
+    args: [userId, deviceId],
+  });
 }
 
 // Get anonymous message count by IP

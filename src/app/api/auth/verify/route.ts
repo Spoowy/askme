@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyCodeAndCreateSession } from "@/lib/db";
+import { verifyCodeAndCreateSession, migrateConversationsToUser, getUserFromToken } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, code } = await req.json();
+    const { email, code, deviceId } = await req.json();
 
     if (!email || !code) {
       return NextResponse.json({ error: "Missing email or code" }, { status: 400 });
@@ -13,6 +13,14 @@ export async function POST(req: NextRequest) {
 
     if (!token) {
       return NextResponse.json({ error: "Invalid or expired code" }, { status: 400 });
+    }
+
+    // Migrate anonymous conversations to user account
+    if (deviceId) {
+      const user = await getUserFromToken(token);
+      if (user) {
+        await migrateConversationsToUser(deviceId, user.id);
+      }
     }
 
     // Set cookie with token

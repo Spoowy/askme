@@ -264,7 +264,7 @@ function getRemarkSuffix(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, userMessage, conversationId } = await req.json();
+    const { messages, userMessage, conversationId, deviceId } = await req.json();
 
     // Check if user is authenticated
     const token = req.cookies.get("session")?.value;
@@ -279,16 +279,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Handle conversation for authenticated users
+    // Handle conversation persistence for all users
     let convId = conversationId;
     let chatMessages = messages;
 
-    if (user && userMessage) {
+    if (userMessage) {
       // Create new conversation if none provided
       if (!convId) {
-        convId = await createConversation(user.id);
+        convId = await createConversation(
+          user ? { userId: user.id } : { deviceId }
+        );
       }
-      await saveMessage(user.id, convId, "user", userMessage);
+      await saveMessage(convId, "user", userMessage);
       chatMessages = await getChatHistory(convId);
     }
 
@@ -312,9 +314,9 @@ export async function POST(req: NextRequest) {
     // Split into multiple messages if --- delimiter is present
     const messageParts = text.split(/\n---\n/).map((s: string) => s.trim()).filter(Boolean);
 
-    // Save assistant response if authenticated (store as single text for history)
-    if (user && convId) {
-      await saveMessage(user.id, convId, "assistant", text);
+    // Save assistant response (store as single text for history)
+    if (convId) {
+      await saveMessage(convId, "assistant", text);
     }
 
     // Increment anonymous count after successful response

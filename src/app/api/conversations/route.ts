@@ -1,34 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromToken, getConversations, createConversation, getChatHistory, deleteConversation } from "@/lib/db";
+import { getUserFromToken, getConversations, createConversation, deleteConversation } from "@/lib/db";
+
+// Get device_id from header
+function getDeviceId(req: NextRequest): string | null {
+  return req.headers.get("x-device-id");
+}
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get("session")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = token ? await getUserFromToken(token) : null;
+  const deviceId = getDeviceId(req);
 
-  const user = await getUserFromToken(token);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Need either user or deviceId
+  if (!user && !deviceId) {
+    return NextResponse.json({ conversations: [] });
+  }
 
-  const conversations = await getConversations(user.id);
+  const conversations = await getConversations(
+    user ? { userId: user.id } : { deviceId: deviceId! }
+  );
   return NextResponse.json({ conversations });
 }
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get("session")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = token ? await getUserFromToken(token) : null;
+  const deviceId = getDeviceId(req);
 
-  const user = await getUserFromToken(token);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !deviceId) {
+    return NextResponse.json({ error: "No identity" }, { status: 400 });
+  }
 
-  const id = await createConversation(user.id);
+  const id = await createConversation(
+    user ? { userId: user.id } : { deviceId: deviceId! }
+  );
   return NextResponse.json({ id });
 }
 
 export async function DELETE(req: NextRequest) {
   const token = req.cookies.get("session")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = token ? await getUserFromToken(token) : null;
+  const deviceId = getDeviceId(req);
 
-  const user = await getUserFromToken(token);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !deviceId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { id } = await req.json();
   await deleteConversation(id);

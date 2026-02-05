@@ -9,6 +9,17 @@ type Conversation = { id: number; title: string; created_at: string };
 
 const FREE_LIMIT = 10;
 
+// Generate or retrieve device ID for anonymous conversation persistence
+function getDeviceId(): string {
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem("tb_device_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("tb_device_id", id);
+  }
+  return id;
+}
+
 // Format markdown: **bold**, *italic*, `code`, ```code blocks```
 function formatMarkdown(text: string) {
   // Handle code blocks first
@@ -171,6 +182,7 @@ export default function Home() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConvId, setCurrentConvId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [deviceId, setDeviceId] = useState<string>("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -189,13 +201,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Initialize device ID for anonymous conversation persistence
+    const did = getDeviceId();
+    setDeviceId(did);
+
     fetch("/api/auth/me").then((r) => r.json()).then((data) => {
       if (data.user) {
         setUser(data.user);
-        fetch("/api/conversations").then((r) => r.json()).then((convData) => {
+      }
+      // Load conversations for both logged-in and anonymous users
+      fetch("/api/conversations", { headers: { "x-device-id": did } })
+        .then((r) => r.json())
+        .then((convData) => {
           if (convData.conversations) setConversations(convData.conversations);
         });
-      }
     });
     fetch("/api/count").then((r) => r.json()).then((data) => {
       if (data.count !== undefined) setMsgCount(data.count);
@@ -240,7 +259,7 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages, userMessage: userMsg.content, conversationId: currentConvId }),
+        body: JSON.stringify({ messages: newMessages, userMessage: userMsg.content, conversationId: currentConvId, deviceId }),
       });
       const data = await res.json();
 
@@ -277,11 +296,14 @@ export default function Home() {
         }
 
         if (!user && data.count !== undefined) setMsgCount(data.count);
-        if (user && data.conversationId && !currentConvId) {
+        // Update conversation list for new conversations
+        if (data.conversationId && !currentConvId) {
           setCurrentConvId(data.conversationId);
-          fetch("/api/conversations").then((r) => r.json()).then((convData) => {
-            if (convData.conversations) setConversations(convData.conversations);
-          });
+          fetch("/api/conversations", { headers: { "x-device-id": deviceId } })
+            .then((r) => r.json())
+            .then((convData) => {
+              if (convData.conversations) setConversations(convData.conversations);
+            });
         }
       }
     } catch {
@@ -311,7 +333,8 @@ export default function Home() {
     setAuthLoading(true);
     setAuthError("");
     try {
-      const res = await fetch("/api/auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) });
+      // Pass deviceId to migrate anonymous conversations to user account
+      const res = await fetch("/api/auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code, deviceId }) });
       const data = await res.json();
       if (data.success) { setUser({ email }); setShowAuth(false); setAuthStep("email"); setCode(""); window.location.reload(); }
       else setAuthError(data.error || "Invalid code");
@@ -320,7 +343,7 @@ export default function Home() {
   };
 
   const loadConversation = async (convId: number) => {
-    const res = await fetch(`/api/conversations/${convId}`);
+    const res = await fetch(`/api/conversations/${convId}`, { headers: { "x-device-id": deviceId } });
     const data = await res.json();
     if (data.messages) { setMessages(data.messages); setCurrentConvId(convId); setSidebarOpen(false); }
   };
@@ -373,8 +396,8 @@ export default function Home() {
 
   return (
     <div className="h-[100dvh] flex bg-stone-50 dark:bg-stone-900 overflow-hidden">
-      {/* Sidebar - Fixed on desktop */}
-      {user && (
+      {/* Sidebar - Fixed on desktop, available for all users with conversations */}
+      {(user || conversations.length > 0) && (
         <>
           <aside className={`fixed md:relative inset-y-0 left-0 z-40 w-64 bg-white dark:bg-stone-800 border-r border-stone-100 dark:border-stone-700 flex flex-col transform transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
             <div className="p-4 border-b border-stone-100 dark:border-stone-700">
@@ -397,7 +420,15 @@ export default function Home() {
               ))}
               {conversations.length === 0 && <p className="text-stone-400 text-xs text-center py-8">No conversations yet</p>}
             </div>
-            <div className="p-4 border-t border-stone-100 dark:border-stone-700 text-xs text-stone-400 truncate">{user.email}</div>
+            {user ? (
+              <div className="p-4 border-t border-stone-100 dark:border-stone-700 text-xs text-stone-400 truncate">{user.email}</div>
+            ) : (
+              <div className="p-4 border-t border-stone-100 dark:border-stone-700">
+                <button onClick={() => setShowAuth(true)} className="w-full text-sm text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition">
+                  Sign in to sync
+                </button>
+              </div>
+            )}
           </aside>
           {sidebarOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
         </>
@@ -408,15 +439,15 @@ export default function Home() {
         {/* Top navbar - sticky */}
         <header className="sticky top-0 z-20 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm border-b border-stone-100 dark:border-stone-800 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {user && (
+            {(user || conversations.length > 0) && (
               <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 -ml-2 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg md:hidden">
                 <svg className="w-5 h-5 dark:text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
             )}
-            {!user && <Logo size="small" />}
-            {user && <span className="text-sm text-stone-600 dark:text-stone-400 hidden md:block">ThinkBack</span>}
+            {!(user || conversations.length > 0) && <Logo size="small" />}
+            {(user || conversations.length > 0) && <span className="text-sm text-stone-600 dark:text-stone-400 hidden md:block">ThinkBack</span>}
           </div>
           {!user && (
             <button onClick={() => setShowAuth(true)} className="text-sm text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition">
@@ -444,7 +475,7 @@ export default function Home() {
                 ) : (
                   <div key={i} className="flex items-end gap-3">
                     <div className="flex-shrink-0 w-8">
-                      {isLastInGroup(messages, i) && !loading && (
+                      {isLastInGroup(messages, i) && !(loading && i === messages.length - 1) && (
                         <Image src="/erwin.jpg" alt="" width={32} height={32} className="rounded-full" />
                       )}
                     </div>
