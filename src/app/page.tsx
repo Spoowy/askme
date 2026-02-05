@@ -39,7 +39,7 @@ function formatMarkdown(text: string) {
 }
 
 // Format inline: **bold**, *italic*, `code`
-function formatInline(text: string, startKey: number): (string | JSX.Element)[] {
+function formatInline(text: string, startKey: number): ReactNode[] {
   const parts: ReactNode[] = [];
   let remaining = text;
   let key = startKey;
