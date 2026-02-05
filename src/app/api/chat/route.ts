@@ -12,10 +12,11 @@ function getIP(req: NextRequest): string {
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Randomly trigger a witty aside (roughly every 3-4 turns after the 2nd message)
+// Randomly trigger a spontaneous remark (after a few exchanges, ~25% chance)
 function shouldAddJoke(messageCount: number): boolean {
-  if (messageCount < 3) return false; // not too early
-  return Math.random() < 0.3; // ~30% chance
+  if (messageCount < 2) return false; // let conversation warm up
+  if (messageCount === 2) return Math.random() < 0.15; // lower chance early
+  return Math.random() < 0.25; // ~25% chance after that
 }
 
 // System prompt: Context-aware Socratic coach that dissolves problems
