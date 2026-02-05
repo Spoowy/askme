@@ -230,6 +230,10 @@ export default function Home() {
     setMessages(newMessages);
     setInput("");
     resetTextarea();
+
+    // Natural delay before "typing" - simulates reading the message first
+    const readingDelay = 400 + Math.random() * 800 + Math.min(userMsg.content.length * 8, 1200);
+    await sleep(readingDelay);
     setLoading(true);
 
     try {
