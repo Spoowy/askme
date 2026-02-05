@@ -440,7 +440,7 @@ export default function Home() {
                 ) : (
                   <div key={i} className="flex items-end gap-3">
                     <div className="flex-shrink-0 w-8">
-                      {isLastInGroup(messages, i) && (
+                      {isLastInGroup(messages, i) && !loading && (
                         <Image src="/erwin.jpg" alt="" width={32} height={32} className="rounded-full" />
                       )}
                     </div>
@@ -451,11 +451,11 @@ export default function Home() {
                 )
               )}
               {loading && (
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
+                <div className="flex items-end gap-3">
+                  <div className="flex-shrink-0 w-8">
                     <Image src="/erwin.jpg" alt="" width={32} height={32} className="rounded-full" />
                   </div>
-                  <div className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-4 py-3 rounded-2xl rounded-tl-sm">
+                  <div className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-4 py-3 rounded-2xl rounded-bl-sm">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 bg-stone-300 dark:bg-stone-500 rounded-full animate-bounce" />
                       <div className="w-2 h-2 bg-stone-300 dark:bg-stone-500 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }} />
