@@ -22,6 +22,10 @@ yarn-error.log*
 .env*.local
 .env
 
+# local database
+*.db
+local.db
+
 # vercel
 .vercel
 
