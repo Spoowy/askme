@@ -447,35 +447,35 @@ export default function Home() {
       {/* Auth modal */}
       {showAuth && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full relative">
+          <div className="bg-white dark:bg-stone-800 rounded-2xl p-6 sm:p-8 max-w-md w-full relative">
             {msgCount < FREE_LIMIT && (
-              <button onClick={() => { setShowAuth(false); setAuthStep("email"); setAuthError(""); }} className="absolute top-4 right-4 text-stone-400 hover:text-stone-600">
+              <button onClick={() => { setShowAuth(false); setAuthStep("email"); setAuthError(""); }} className="absolute top-4 right-4 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             )}
             <div className="flex justify-center mb-6"><Logo size="small" /></div>
-            <h2 className="text-xl font-medium mb-2 text-center">{msgCount >= FREE_LIMIT ? "Keep thinking" : "Sign in"}</h2>
-            <p className="text-stone-500 mb-6 text-sm text-center">
+            <h2 className="text-xl font-medium mb-2 text-center dark:text-stone-100">{msgCount >= FREE_LIMIT ? "Keep thinking" : "Sign in"}</h2>
+            <p className="text-stone-500 dark:text-stone-400 mb-6 text-sm text-center">
               {authStep === "email" ? "Enter your email to continue" : "Enter the 6-digit code we sent you"}
             </p>
             {authStep === "email" ? (
               <form onSubmit={sendCode} className="space-y-3">
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300 text-[16px]" required disabled={authLoading} />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" className="w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 dark:focus:ring-stone-500 text-[16px]" required disabled={authLoading} />
                 {authError && <p className="text-red-500 text-sm">{authError}</p>}
-                <button type="submit" disabled={authLoading} className="w-full bg-stone-800 text-white py-3 rounded-xl hover:bg-stone-700 transition disabled:opacity-50 font-medium">
+                <button type="submit" disabled={authLoading} className="w-full bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 py-3 rounded-xl hover:bg-stone-700 dark:hover:bg-stone-200 transition disabled:opacity-50 font-medium">
                   {authLoading ? "Sending..." : "Continue"}
                 </button>
               </form>
             ) : (
               <form onSubmit={verifyCode} className="space-y-3">
-                <input type="text" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="123456" className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300 text-center text-2xl tracking-widest font-mono" required disabled={authLoading} />
+                <input type="text" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="123456" className="w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-300 dark:focus:ring-stone-500 text-center text-2xl tracking-widest font-mono" required disabled={authLoading} />
                 {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
-                <button type="submit" disabled={authLoading || code.length !== 6} className="w-full bg-stone-800 text-white py-3 rounded-xl hover:bg-stone-700 transition disabled:opacity-50 font-medium">
+                <button type="submit" disabled={authLoading || code.length !== 6} className="w-full bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 py-3 rounded-xl hover:bg-stone-700 dark:hover:bg-stone-200 transition disabled:opacity-50 font-medium">
                   {authLoading ? "Verifying..." : "Verify"}
                 </button>
-                <button type="button" onClick={() => { setAuthStep("email"); setCode(""); setAuthError(""); }} className="w-full text-stone-500 text-sm hover:text-stone-700">
+                <button type="button" onClick={() => { setAuthStep("email"); setCode(""); setAuthError(""); }} className="w-full text-stone-500 dark:text-stone-400 text-sm hover:text-stone-700 dark:hover:text-stone-300">
                   Use different email
                 </button>
               </form>
