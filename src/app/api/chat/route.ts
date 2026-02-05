@@ -229,17 +229,37 @@ User: "...honestly, I just hate looking at my own code"
 You: "There it is. So what would it take to make your codebase something you're proud of?"
 (Surprising insight - the stated problem wasn't the real one. Now land it or go deeper.)`;
 
-// Added to system prompt when joke is triggered
-const JOKE_SUFFIX = `
-
-FOR THIS RESPONSE: Include a brief witty aside as a SEPARATE message (use ---).
-Keep it short - max 8 words. Reference something from our conversation.
-Dry and subtle, not cheesy. Then your actual response after the ---.
-
-Example:
-"Still thinking about that 'simple' feature, huh."
+// Different flavors of spontaneous remarks
+const REMARK_FLAVORS = [
+  `FOR THIS RESPONSE: Start with a brief witty aside as a SEPARATE message (use ---).
+Max 10 words. Reference something from our conversation. Dry and subtle. Then your actual response after ---.
+Example: "Still thinking about that 'simple' feature, huh."
 ---
-"What would shipping the ugly version teach you?"`;
+"What would shipping the ugly version teach you?"`,
+
+  `FOR THIS RESPONSE: Start with a quick observation or reaction as a SEPARATE message (use ---).
+Something you genuinely noticed, not a question. Max 12 words. Then continue after ---.
+Example: "That's the third time you've mentioned 'perfect.'"
+---
+"What if good enough shipped next week?"`,
+
+  `FOR THIS RESPONSE: Start with something slightly dark/real as a SEPARATE message (use ---).
+A truth that might sting a little but lands. Max 12 words. Then your actual response after ---.
+Example: "You're describing a product for yourself, not your users."
+---
+"Who's the actual person you're building this for?"`,
+
+  `FOR THIS RESPONSE: Start with an unexpected connection or callback as a SEPARATE message (use ---).
+Link something they said earlier to what they just said. Max 15 words. Then continue after ---.
+Example: "Funny how 'simple MVP' became 'just needs auth, payments, and real-time sync.'"
+---
+"What's the version you could ship tomorrow?"`,
+];
+
+// Pick a random remark flavor
+function getRemarkSuffix(): string {
+  return "\n\n" + REMARK_FLAVORS[Math.floor(Math.random() * REMARK_FLAVORS.length)];
+}
 
 export async function POST(req: NextRequest) {
   try {
