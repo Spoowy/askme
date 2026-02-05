@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     // Send email
     await resend.emails.send({
-      from: "Ask Questions <onboarding@resend.dev>",
+      from: "Thinkback <sys@thinkback.space>",
       to: email,
       subject: "Your verification code",
       html: `<p>Your code is: <strong>${code}</strong></p><p>Expires in 10 minutes.</p>`,
