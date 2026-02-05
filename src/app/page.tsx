@@ -9,6 +9,82 @@ type Conversation = { id: number; title: string; created_at: string };
 
 const FREE_LIMIT = 10;
 
+// Intro message from Erwin
+const INTRO_MESSAGE = `Most AI gives you answers. This one only asks questions.
+
+I built this because I noticed something: the more we let AI think for us, the less we actually think ourselves.
+
+What if AI could do the opposite? What if instead of making us passive, it made us active thinkers?
+
+That's what this is — a companion that helps you find answers, not one that hands them to you.`;
+
+// Typewriter hook with natural pauses and corrections
+function useTypewriter(text: string, start = false) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!start) return;
+    let cancelled = false;
+
+    // Words to "rethink" - delete and replace
+    const corrections: Record<string, string> = {
+      "noticed something:": "realized something:",
+      "do the opposite?": "make us sharper?",
+    };
+
+    const run = async () => {
+      let current = "";
+      let i = 0;
+
+      while (i < text.length && !cancelled) {
+        current += text[i];
+        setDisplayed(current);
+        i++;
+
+        // Check if we just typed a correction trigger
+        for (const [wrong, right] of Object.entries(corrections)) {
+          if (current.endsWith(wrong)) {
+            await sleep(600);
+            for (let j = 0; j < wrong.length && !cancelled; j++) {
+              current = current.slice(0, -1);
+              setDisplayed(current);
+              await sleep(30);
+            }
+            await sleep(300);
+            for (const char of right) {
+              if (cancelled) break;
+              current += char;
+              setDisplayed(current);
+              await sleep(50);
+            }
+            break;
+          }
+        }
+
+        // Natural pauses after punctuation
+        if (text[i - 1] === "." || text[i - 1] === "?") await sleep(250);
+        else if (text[i - 1] === ",") await sleep(120);
+        else if (text[i - 1] === "\n") await sleep(180);
+        else await sleep(25 + Math.random() * 15);
+      }
+
+      if (!cancelled) setDone(true);
+    };
+
+    run();
+    return () => { cancelled = true; };
+  }, [text, start]);
+
+  const skip = () => {
+    setDisplayed(text.replace("noticed something:", "realized something:").replace("do the opposite?", "make us sharper?"));
+    setDone(true);
+  };
+  return { displayed, done, skip };
+}
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 function Logo({ size = "default" }: { size?: "default" | "small" }) {
   const isSmall = size === "small";
   return (
@@ -27,6 +103,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [msgCount, setMsgCount] = useState(0);
   const [showIntro, setShowIntro] = useState(true);
+  const [introReady, setIntroReady] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authStep, setAuthStep] = useState<AuthStep>("email");
@@ -42,6 +119,8 @@ export default function Home() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const { displayed, done, skip } = useTypewriter(INTRO_MESSAGE, introReady);
+
   // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,6 +128,7 @@ export default function Home() {
 
   useEffect(() => {
     if (localStorage.getItem("tb_intro_seen")) setShowIntro(false);
+    else setTimeout(() => setIntroReady(true), 500);
   }, []);
 
   useEffect(() => {
@@ -167,18 +247,39 @@ export default function Home() {
   if (showIntro) {
     return (
       <main className="h-[100dvh] flex items-center justify-center p-6 bg-gradient-to-b from-stone-50 to-stone-100">
-        <div className="max-w-md w-full text-center">
-          <Logo />
-          <div className="mt-12">
-            <h1 className="text-3xl font-light text-stone-800 mb-4">Think deeper.</h1>
-            <p className="text-stone-500 mb-8 leading-relaxed">
-              Most AI gives you answers.<br />This one asks questions that help you find them yourself.
-            </p>
+        <div className="max-w-lg w-full">
+          <div className="flex justify-center mb-8">
+            <Logo />
+          </div>
+
+          {/* Chat-like intro from Erwin */}
+          <div className="flex gap-3 items-start">
+            <div className="flex-shrink-0">
+              <Image src="/erwin.jpg" alt="Erwin" width={44} height={44} className="rounded-full" priority />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-stone-700 mb-2">Erwin</p>
+              <div className="bg-white border border-stone-200 rounded-2xl rounded-tl-sm px-4 py-3 text-stone-700 whitespace-pre-line text-[15px] leading-relaxed">
+                {displayed}
+                {!done && <span className="inline-block w-0.5 h-4 bg-stone-400 ml-0.5 animate-pulse align-middle" />}
+              </div>
+            </div>
+          </div>
+
+          {/* Continue button */}
+          <div className={`mt-8 flex flex-col items-center gap-3 transition-opacity duration-500 ${done ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <button onClick={handleContinue} className="px-8 py-3 bg-stone-800 text-white rounded-full hover:bg-stone-700 transition font-medium">
               Start thinking
             </button>
-            <p className="text-stone-400 text-xs mt-8">Free to try. No account needed.</p>
+            <p className="text-stone-400 text-xs">Free to try. No account needed.</p>
           </div>
+
+          {/* Skip */}
+          {!done && introReady && (
+            <button onClick={skip} className="block mx-auto mt-6 text-stone-400 text-sm hover:text-stone-600 transition">
+              Skip
+            </button>
+          )}
         </div>
       </main>
     );
