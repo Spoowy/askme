@@ -291,10 +291,10 @@ export async function POST(req: NextRequest) {
       chatMessages = await getChatHistory(convId);
     }
 
-    // Check if we should add a witty aside this turn
+    // Check if we should add a spontaneous remark this turn
     const messageCount = chatMessages.filter((m: { role: string }) => m.role === "user").length;
-    const addJoke = shouldAddJoke(messageCount);
-    const systemPrompt = addJoke ? SYSTEM_PROMPT + JOKE_SUFFIX : SYSTEM_PROMPT;
+    const addRemark = shouldAddJoke(messageCount);
+    const systemPrompt = addRemark ? SYSTEM_PROMPT + getRemarkSuffix() : SYSTEM_PROMPT;
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
