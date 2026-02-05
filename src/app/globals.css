@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+:root {
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+}
+
+html, body {
   font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Better mobile viewport handling */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* Prevent iOS zoom on input focus */
+@media screen and (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area padding for notched devices */
+.safe-bottom {
+  padding-bottom: max(0.5rem, var(--sab));
+}
+
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better textarea defaults */
+textarea {
+  field-sizing: content;
 }

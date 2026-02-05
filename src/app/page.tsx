@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, FormEvent } from "react";
-import Image from "next/image";
 
 type Message = { role: "user" | "assistant"; content: string };
 type AuthStep = "email" | "code" | "done";
@@ -9,85 +8,16 @@ type Conversation = { id: number; title: string; created_at: string };
 
 const FREE_LIMIT = 10;
 
-// Intro message from Erwin
-const INTRO_MESSAGE = `Most AI gives you answers. This one only asks questions.
-
-I built this because I noticed something: the more we let AI think for us, the less we actually think ourselves.
-
-What if AI could do the opposite? What if instead of making us passive, it made us active thinkers?
-
-That's what this is — a companion that helps you find answers, not one that hands them to you.
-
-Try it. Hit start.`;
-
-// Typewriter hook with natural pauses and corrections
-function useTypewriter(text: string, start = false) {
-  const [displayed, setDisplayed] = useState("");
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (!start) return;
-    let cancelled = false;
-
-    // Words to "rethink" - delete and replace with better version
-    const corrections: Record<string, string> = {
-      "noticed something:": "realized something:",
-      "do the opposite?": "make us sharper?",
-    };
-
-    const run = async () => {
-      let current = "";
-      let i = 0;
-
-      while (i < text.length && !cancelled) {
-        current += text[i];
-        setDisplayed(current);
-        i++;
-
-        // Check if we just typed a correction trigger
-        for (const [wrong, right] of Object.entries(corrections)) {
-          if (current.endsWith(wrong)) {
-            // Pause, then delete the wrong word
-            await sleep(600);
-            for (let j = 0; j < wrong.length && !cancelled; j++) {
-              current = current.slice(0, -1);
-              setDisplayed(current);
-              await sleep(30);
-            }
-            // Pause, then type the right word
-            await sleep(300);
-            for (const char of right) {
-              if (cancelled) break;
-              current += char;
-              setDisplayed(current);
-              await sleep(50);
-            }
-            break;
-          }
-        }
-
-        // Natural pauses after punctuation
-        if (text[i - 1] === "." || text[i - 1] === "?") {
-          await sleep(400);
-        } else if (text[i - 1] === ",") {
-          await sleep(200);
-        } else if (text[i - 1] === "\n") {
-          await sleep(300);
-        } else {
-          // Base typing speed with slight randomness
-          await sleep(50 + Math.random() * 30);
-        }
-      }
-
-      if (!cancelled) setDone(true);
-    };
-
-    run();
-    return () => { cancelled = true; };
-  }, [text, start]);
-
-  const skip = () => { setDisplayed(text.replace("noticed something:", "realized something:").replace("do the opposite?", "make us sharper?")); setDone(true); };
-  return { displayed, done, skip };
+// Simple logo component
+function Logo({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      <div className="w-8 h-8 bg-stone-800 rounded-lg flex items-center justify-center">
+        <span className="text-white text-lg font-bold">?</span>
+      </div>
+      <span className="font-semibold text-stone-800 tracking-tight">ThinkBack</span>
+    </div>
+  );
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
@@ -100,7 +30,6 @@ export default function Home() {
 
   // Intro state
   const [showIntro, setShowIntro] = useState(true);
-  const [introReady, setIntroReady] = useState(false);
 
   // Auth state
   const [user, setUser] = useState<{ email: string } | null>(null);
@@ -117,12 +46,10 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const endRef = useRef<HTMLDivElement>(null);
-  const { displayed, done, skip } = useTypewriter(INTRO_MESSAGE, introReady);
 
   // Check if intro was seen
   useEffect(() => {
-    if (localStorage.getItem("aq_intro_seen")) setShowIntro(false);
-    else setTimeout(() => setIntroReady(true), 500);
+    if (localStorage.getItem("tb_intro_seen")) setShowIntro(false);
   }, []);
 
   // Check session and get server count on mount
@@ -130,7 +57,6 @@ export default function Home() {
     fetch("/api/auth/me").then((r) => r.json()).then((data) => {
       if (data.user) {
         setUser(data.user);
-        // Fetch conversations for logged-in users
         fetch("/api/conversations").then((r) => r.json()).then((convData) => {
           if (convData.conversations) setConversations(convData.conversations);
         });
@@ -152,7 +78,7 @@ export default function Home() {
   }, [msgCount, user]);
 
   const handleContinue = () => {
-    localStorage.setItem("aq_intro_seen", "true");
+    localStorage.setItem("tb_intro_seen", "true");
     setShowIntro(false);
   };
 
@@ -185,11 +111,9 @@ export default function Home() {
         setMessages([...newMessages, { role: "assistant", content: data.message }]);
         if (!user && data.count !== undefined) setMsgCount(data.count);
 
-        // Update conversation state for logged-in users
         if (user && data.conversationId) {
           if (!currentConvId) {
             setCurrentConvId(data.conversationId);
-            // Refresh conversations list
             fetch("/api/conversations").then((r) => r.json()).then((convData) => {
               if (convData.conversations) setConversations(convData.conversations);
             });
@@ -252,7 +176,6 @@ export default function Home() {
     }
   };
 
-  // Load a conversation
   const loadConversation = async (convId: number) => {
     const res = await fetch(`/api/conversations/${convId}`);
     const data = await res.json();
@@ -263,7 +186,6 @@ export default function Home() {
     }
   };
 
-  // Start new conversation
   const newConversation = () => {
     setMessages([]);
     setCurrentConvId(null);
@@ -273,43 +195,29 @@ export default function Home() {
   // Intro screen
   if (showIntro) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-stone-50">
-        <div className="max-w-lg w-full">
-          {/* Chat-like intro from Erwin */}
-          <div className="flex gap-3 items-start">
-            <Image
-              src="/erwin.jpg"
-              alt="Erwin"
-              width={48}
-              height={48}
-              className="rounded-full flex-shrink-0"
-              priority
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-stone-700 mb-2">Erwin</p>
-              <div className="bg-white border border-stone-200 rounded-2xl rounded-tl-sm px-4 py-3 text-stone-700 whitespace-pre-line">
-                {displayed}
-                {!done && <span className="inline-block w-0.5 h-4 bg-stone-400 ml-0.5 animate-pulse align-middle" />}
-              </div>
-            </div>
-          </div>
+      <main className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-stone-50 to-stone-100">
+        <div className="max-w-md w-full text-center">
+          <Logo className="justify-center mb-12" />
 
-          {/* Continue button */}
-          <div className={`mt-8 flex flex-col items-center gap-3 transition-opacity duration-500 ${done ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-            <button
-              onClick={handleContinue}
-              className="px-8 py-3 bg-stone-800 text-white rounded-full hover:bg-stone-700 transition font-medium"
-            >
-              Start Thinking
-            </button>
-          </div>
+          <h1 className="text-3xl font-light text-stone-800 mb-4">
+            Think deeper.
+          </h1>
 
-          {/* Skip */}
-          {!done && introReady && (
-            <button onClick={skip} className="block mx-auto mt-6 text-stone-400 text-sm hover:text-stone-600 transition">
-              Skip
-            </button>
-          )}
+          <p className="text-stone-500 mb-8 leading-relaxed">
+            Most AI gives you answers.<br />
+            This one asks questions that help you find them yourself.
+          </p>
+
+          <button
+            onClick={handleContinue}
+            className="px-8 py-3 bg-stone-800 text-white rounded-full hover:bg-stone-700 transition font-medium"
+          >
+            Start thinking
+          </button>
+
+          <p className="text-stone-400 text-xs mt-8">
+            Free to try. No account needed.
+          </p>
         </div>
       </main>
     );
@@ -323,7 +231,6 @@ export default function Home() {
       {/* Sidebar for logged-in users */}
       {user && (
         <>
-          {/* Mobile toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="fixed top-4 left-4 z-50 p-2 bg-white border border-stone-200 rounded-lg shadow-sm md:hidden"
@@ -333,12 +240,13 @@ export default function Home() {
             </svg>
           </button>
 
-          {/* Sidebar */}
-          <aside className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-200 transform transition-transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+          <aside className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-100 transform transition-transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
             <div className="p-4 h-full flex flex-col">
+              <Logo className="mb-6" />
+
               <button
                 onClick={newConversation}
-                className="w-full px-4 py-2 mb-4 bg-stone-800 text-white rounded-lg hover:bg-stone-700 transition text-sm"
+                className="w-full px-4 py-2.5 mb-4 bg-stone-800 text-white rounded-lg hover:bg-stone-700 transition text-sm font-medium"
               >
                 + New conversation
               </button>
@@ -349,24 +257,23 @@ export default function Home() {
                     key={conv.id}
                     onClick={() => loadConversation(conv.id)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition ${
-                      currentConvId === conv.id ? "bg-stone-100 text-stone-900" : "text-stone-600 hover:bg-stone-50"
+                      currentConvId === conv.id ? "bg-stone-100 text-stone-900" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"
                     }`}
                   >
                     {conv.title}
                   </button>
                 ))}
                 {conversations.length === 0 && (
-                  <p className="text-stone-400 text-xs text-center py-4">No conversations yet</p>
+                  <p className="text-stone-400 text-xs text-center py-8">No conversations yet</p>
                 )}
               </div>
 
-              <div className="pt-4 border-t border-stone-100 text-xs text-stone-400">
+              <div className="pt-4 border-t border-stone-100 text-xs text-stone-400 truncate">
                 {user.email}
               </div>
             </div>
           </aside>
 
-          {/* Overlay for mobile */}
           {sidebarOpen && (
             <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
           )}
@@ -374,155 +281,181 @@ export default function Home() {
       )}
 
       <main className="flex-1 max-w-2xl mx-auto p-4 min-h-screen flex flex-col">
-
-      {/* Header with login for non-users */}
-      {!user && (
-        <div className="flex justify-end py-2">
-          <button
-            onClick={() => setShowAuth(true)}
-            className="text-sm text-stone-500 hover:text-stone-700 transition"
-          >
-            Sign in
-          </button>
+        {/* Header */}
+        <div className="flex items-center justify-between py-3">
+          {!user && <Logo />}
+          {user && <div />}
+          {!user && (
+            <button
+              onClick={() => setShowAuth(true)}
+              className="text-sm text-stone-500 hover:text-stone-700 transition"
+            >
+              Sign in
+            </button>
+          )}
         </div>
-      )}
 
-      {/* Messages */}
-      <div className="flex-1 space-y-4 pb-4">
-        {!hasStarted && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-            <p className="text-2xl text-stone-600 mb-8">What are you trying to figure out?</p>
-          </div>
-        )}
-        {messages.map((m, i) =>
-          m.role === "user" ? (
-            <div key={i} className="flex justify-end">
-              <div className="max-w-[75%] px-4 py-3 rounded-2xl rounded-br-sm whitespace-pre-wrap bg-stone-800 text-white">
-                {m.content}
-              </div>
+        {/* Messages */}
+        <div className="flex-1 space-y-4 pb-4">
+          {!hasStarted && (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+              <p className="text-2xl text-stone-600 font-light">What are you trying to figure out?</p>
             </div>
-          ) : (
-            <div key={i} className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <Image src="/erwin.jpg" alt="Erwin" width={36} height={36} className="rounded-full" />
+          )}
+          {messages.map((m, i) =>
+            m.role === "user" ? (
+              <div key={i} className="flex justify-end">
+                <div className="max-w-[75%] px-4 py-3 rounded-2xl rounded-br-sm whitespace-pre-wrap bg-stone-800 text-white">
+                  {m.content}
+                </div>
               </div>
-              <div className="max-w-[75%] px-4 py-3 rounded-2xl rounded-tl-sm whitespace-pre-wrap bg-white border border-stone-200 text-stone-700">
-                {m.content}
-              </div>
-            </div>
-          )
-        )}
-        {loading && (
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <Image src="/erwin.jpg" alt="Erwin" width={36} height={36} className="rounded-full" />
-            </div>
-            <div className="bg-white border border-stone-200 px-4 py-3 rounded-2xl rounded-tl-sm text-stone-300">...</div>
-          </div>
-        )}
-        <div ref={endRef} />
-      </div>
-
-      {/* Auth modal */}
-      {showAuth && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full relative">
-            {/* Close button - only show if not at limit */}
-            {msgCount < FREE_LIMIT && (
-              <button
-                onClick={() => { setShowAuth(false); setAuthStep("email"); setAuthError(""); }}
-                className="absolute top-4 right-4 text-stone-400 hover:text-stone-600"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-            <h2 className="text-xl font-medium mb-2 text-center">
-              {msgCount >= FREE_LIMIT ? "Continue your journey" : "Sign in"}
-            </h2>
-            <p className="text-stone-500 mb-6 text-sm text-center">
-              {authStep === "email" ? "Enter your email to keep learning" : "Enter the 6-digit code we sent you"}
-            </p>
-
-            {authStep === "email" ? (
-              <form onSubmit={sendCode} className="space-y-3">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@email.com"
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
-                  required
-                  disabled={authLoading}
-                />
-                {authError && <p className="text-red-500 text-sm">{authError}</p>}
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full bg-stone-800 text-white py-3 rounded-xl hover:bg-stone-700 transition disabled:opacity-50"
-                >
-                  {authLoading ? "Sending..." : "Send verification code"}
-                </button>
-              </form>
             ) : (
-              <form onSubmit={verifyCode} className="space-y-3">
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="123456"
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300 text-center text-2xl tracking-widest"
-                  required
-                  disabled={authLoading}
-                />
-                {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
+              <div key={i} className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-stone-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-stone-600 text-sm font-medium">?</span>
+                </div>
+                <div className="max-w-[75%] px-4 py-3 rounded-2xl rounded-tl-sm whitespace-pre-wrap bg-white border border-stone-200 text-stone-700">
+                  {m.content}
+                </div>
+              </div>
+            )
+          )}
+          {loading && (
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-stone-200 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-stone-600 text-sm font-medium">?</span>
+              </div>
+              <div className="bg-white border border-stone-200 px-4 py-3 rounded-2xl rounded-tl-sm text-stone-300">
+                <span className="inline-flex gap-1">
+                  <span className="animate-bounce">.</span>
+                  <span className="animate-bounce" style={{ animationDelay: "0.1s" }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>.</span>
+                </span>
+              </div>
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+
+        {/* Auth modal */}
+        {showAuth && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full relative">
+              {msgCount < FREE_LIMIT && (
                 <button
-                  type="submit"
-                  disabled={authLoading || code.length !== 6}
-                  className="w-full bg-stone-800 text-white py-3 rounded-xl hover:bg-stone-700 transition disabled:opacity-50"
+                  onClick={() => { setShowAuth(false); setAuthStep("email"); setAuthError(""); }}
+                  className="absolute top-4 right-4 text-stone-400 hover:text-stone-600"
                 >
-                  {authLoading ? "Verifying..." : "Verify"}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setAuthStep("email"); setCode(""); setAuthError(""); }}
-                  className="w-full text-stone-500 text-sm hover:text-stone-700"
-                >
-                  Use different email
-                </button>
-              </form>
-            )}
+              )}
+
+              <Logo className="justify-center mb-6" />
+
+              <h2 className="text-xl font-medium mb-2 text-center">
+                {msgCount >= FREE_LIMIT ? "Keep thinking" : "Sign in"}
+              </h2>
+              <p className="text-stone-500 mb-6 text-sm text-center">
+                {authStep === "email" ? "Enter your email to continue" : "Enter the 6-digit code we sent you"}
+              </p>
+
+              {authStep === "email" ? (
+                <form onSubmit={sendCode} className="space-y-3">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@email.com"
+                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
+                    required
+                    disabled={authLoading}
+                  />
+                  {authError && <p className="text-red-500 text-sm">{authError}</p>}
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="w-full bg-stone-800 text-white py-3 rounded-xl hover:bg-stone-700 transition disabled:opacity-50 font-medium"
+                  >
+                    {authLoading ? "Sending..." : "Continue"}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={verifyCode} className="space-y-3">
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="123456"
+                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300 text-center text-2xl tracking-widest font-mono"
+                    required
+                    disabled={authLoading}
+                  />
+                  {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
+                  <button
+                    type="submit"
+                    disabled={authLoading || code.length !== 6}
+                    className="w-full bg-stone-800 text-white py-3 rounded-xl hover:bg-stone-700 transition disabled:opacity-50 font-medium"
+                  >
+                    {authLoading ? "Verifying..." : "Verify"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthStep("email"); setCode(""); setAuthError(""); }}
+                    className="w-full text-stone-500 text-sm hover:text-stone-700"
+                  >
+                    Use different email
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Input */}
-      <form onSubmit={sendMessage} className="sticky bottom-0 bg-stone-50 pt-4 pb-2">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={showAuth ? "Sign in to continue..." : hasStarted ? "..." : "I want to understand..."}
-            disabled={loading || showAuth}
-            className="flex-1 px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={loading || showAuth || !input.trim()}
-            className="px-6 py-3 bg-stone-800 text-white rounded-xl hover:bg-stone-700 disabled:opacity-50 transition"
-          >
-            &rarr;
-          </button>
-        </div>
-        {!user && !hasStarted && (
-          <p className="text-center text-xs text-stone-300 mt-3">
-            {FREE_LIMIT - msgCount} questions to start
-          </p>
         )}
-      </form>
 
+        {/* Input */}
+        <form onSubmit={sendMessage} className="bg-stone-50 pt-3 pb-safe">
+          <div className="flex gap-2 items-end">
+            <textarea
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-resize
+                e.target.style.height = "auto";
+                e.target.style.height = Math.min(e.target.scrollHeight, 150) + "px";
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage(e);
+                }
+              }}
+              onFocus={() => {
+                // Scroll to bottom when input is focused on mobile
+                setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+              }}
+              placeholder={showAuth ? "Sign in to continue..." : hasStarted ? "Continue..." : "I want to understand..."}
+              disabled={loading || showAuth}
+              rows={1}
+              className="flex-1 px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-300 disabled:opacity-50 bg-white resize-none overflow-hidden"
+              style={{ minHeight: "48px", maxHeight: "150px" }}
+            />
+            <button
+              type="submit"
+              disabled={loading || showAuth || !input.trim()}
+              className="px-5 py-3 bg-stone-800 text-white rounded-xl hover:bg-stone-700 disabled:opacity-50 transition flex-shrink-0 h-12"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          </div>
+          {!user && !hasStarted && (
+            <p className="text-center text-xs text-stone-400 mt-3">
+              {FREE_LIMIT - msgCount} free questions
+            </p>
+          )}
+        </form>
       </main>
     </div>
   );
