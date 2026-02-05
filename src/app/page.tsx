@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent, ReactNode } from "react";
 import Image from "next/image";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -13,7 +13,7 @@ const FREE_LIMIT = 10;
 function formatMarkdown(text: string) {
   // Handle code blocks first
   const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g;
-  const parts: (string | JSX.Element)[] = [];
+  const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match;
   let key = 0;
@@ -40,7 +40,7 @@ function formatMarkdown(text: string) {
 
 // Format inline: **bold**, *italic*, `code`
 function formatInline(text: string, startKey: number): (string | JSX.Element)[] {
-  const parts: (string | JSX.Element)[] = [];
+  const parts: ReactNode[] = [];
   let remaining = text;
   let key = startKey;
 
