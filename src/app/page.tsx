@@ -260,7 +260,7 @@ export default function Home() {
   // Intro screen
   if (showIntro) {
     return (
-      <main className="h-[100dvh] flex items-center justify-center p-6 bg-gradient-to-b from-stone-50 to-stone-100">
+      <main className="h-[100dvh] flex items-center justify-center p-6 bg-gradient-to-b from-stone-50 to-stone-100 dark:from-stone-900 dark:to-stone-950">
         <div className="max-w-lg w-full">
           <div className="flex justify-center mb-8">
             <Logo />
@@ -272,8 +272,8 @@ export default function Home() {
               <Image src="/erwin.jpg" alt="Erwin" width={44} height={44} className="rounded-full" priority />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-stone-700 mb-2">Erwin</p>
-              <div className="bg-white border border-stone-200 rounded-2xl rounded-tl-sm px-4 py-3 text-stone-700 whitespace-pre-line text-[15px] leading-relaxed">
+              <p className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Erwin</p>
+              <div className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl rounded-tl-sm px-4 py-3 text-stone-700 dark:text-stone-200 whitespace-pre-line text-[15px] leading-relaxed">
                 {displayed}
                 {!done && <span className="inline-block w-0.5 h-4 bg-stone-400 ml-0.5 animate-pulse align-middle" />}
               </div>
@@ -282,7 +282,7 @@ export default function Home() {
 
           {/* Continue button */}
           <div className={`mt-8 flex flex-col items-center gap-3 transition-opacity duration-500 ${done ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-            <button onClick={handleContinue} className="px-8 py-3 bg-stone-800 text-white rounded-full hover:bg-stone-700 transition font-medium">
+            <button onClick={handleContinue} className="px-8 py-3 bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 rounded-full hover:bg-stone-700 dark:hover:bg-stone-200 transition font-medium">
               Start thinking
             </button>
             <p className="text-stone-400 text-xs">Free to try. No account needed.</p>
@@ -290,7 +290,7 @@ export default function Home() {
 
           {/* Skip */}
           {!done && introReady && (
-            <button onClick={skip} className="block mx-auto mt-6 text-stone-400 text-sm hover:text-stone-600 transition">
+            <button onClick={skip} className="block mx-auto mt-6 text-stone-400 text-sm hover:text-stone-300 transition">
               Skip
             </button>
           )}
@@ -302,16 +302,16 @@ export default function Home() {
   const hasStarted = messages.length > 0;
 
   return (
-    <div className="h-[100dvh] flex bg-stone-50 overflow-hidden">
+    <div className="h-[100dvh] flex bg-stone-50 dark:bg-stone-900 overflow-hidden">
       {/* Sidebar - Fixed on desktop */}
       {user && (
         <>
-          <aside className={`fixed md:relative inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-100 flex flex-col transform transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
-            <div className="p-4 border-b border-stone-100">
+          <aside className={`fixed md:relative inset-y-0 left-0 z-40 w-64 bg-white dark:bg-stone-800 border-r border-stone-100 dark:border-stone-700 flex flex-col transform transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+            <div className="p-4 border-b border-stone-100 dark:border-stone-700">
               <Logo size="small" />
             </div>
             <div className="p-3">
-              <button onClick={newConversation} className="w-full px-4 py-2.5 bg-stone-800 text-white rounded-lg hover:bg-stone-700 transition text-sm font-medium">
+              <button onClick={newConversation} className="w-full px-4 py-2.5 bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-200 transition text-sm font-medium">
                 + New conversation
               </button>
             </div>
@@ -320,14 +320,14 @@ export default function Home() {
                 <button
                   key={conv.id}
                   onClick={() => loadConversation(conv.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition ${currentConvId === conv.id ? "bg-stone-100 text-stone-900" : "text-stone-500 hover:bg-stone-50 hover:text-stone-700"}`}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition ${currentConvId === conv.id ? "bg-stone-100 dark:bg-stone-700 text-stone-900 dark:text-stone-100" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-700 hover:text-stone-700 dark:hover:text-stone-200"}`}
                 >
                   {conv.title}
                 </button>
               ))}
               {conversations.length === 0 && <p className="text-stone-400 text-xs text-center py-8">No conversations yet</p>}
             </div>
-            <div className="p-4 border-t border-stone-100 text-xs text-stone-400 truncate">{user.email}</div>
+            <div className="p-4 border-t border-stone-100 dark:border-stone-700 text-xs text-stone-400 truncate">{user.email}</div>
           </aside>
           {sidebarOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
         </>
@@ -336,20 +336,20 @@ export default function Home() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top navbar - sticky */}
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-sm border-b border-stone-100 px-4 py-3 flex items-center justify-between">
+        <header className="sticky top-0 z-20 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm border-b border-stone-100 dark:border-stone-800 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {user && (
-              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 -ml-2 hover:bg-stone-100 rounded-lg md:hidden">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 -ml-2 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg md:hidden">
+                <svg className="w-5 h-5 dark:text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
             )}
             {!user && <Logo size="small" />}
-            {user && <span className="text-sm text-stone-600 hidden md:block">ThinkBack</span>}
+            {user && <span className="text-sm text-stone-600 dark:text-stone-400 hidden md:block">ThinkBack</span>}
           </div>
           {!user && (
-            <button onClick={() => setShowAuth(true)} className="text-sm text-stone-500 hover:text-stone-700 transition">
+            <button onClick={() => setShowAuth(true)} className="text-sm text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition">
               Sign in
             </button>
           )}
@@ -360,14 +360,14 @@ export default function Home() {
           <div className="max-w-2xl mx-auto px-4 py-4">
             {!hasStarted && (
               <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-                <p className="text-2xl text-stone-600 font-light">What are you trying to figure out?</p>
+                <p className="text-2xl text-stone-600 dark:text-stone-400 font-light">What are you trying to figure out?</p>
               </div>
             )}
             <div className="space-y-4">
               {messages.map((m, i) =>
                 m.role === "user" ? (
                   <div key={i} className="flex justify-end">
-                    <div className="max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-br-sm whitespace-pre-wrap bg-stone-800 text-white text-[15px]">
+                    <div className="max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-br-sm whitespace-pre-wrap bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 text-[15px]">
                       {m.content}
                     </div>
                   </div>
@@ -376,7 +376,7 @@ export default function Home() {
                     <div className="flex-shrink-0 mt-0.5">
                       <Image src="/erwin.jpg" alt="" width={32} height={32} className="rounded-full" />
                     </div>
-                    <div className="max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-tl-sm whitespace-pre-wrap bg-white border border-stone-200 text-stone-700 text-[15px]">
+                    <div className="max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-tl-sm whitespace-pre-wrap bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 text-[15px]">
                       {m.content}
                     </div>
                   </div>
@@ -387,11 +387,11 @@ export default function Home() {
                   <div className="flex-shrink-0">
                     <Image src="/erwin.jpg" alt="" width={32} height={32} className="rounded-full" />
                   </div>
-                  <div className="bg-white border border-stone-200 px-4 py-3 rounded-2xl rounded-tl-sm">
+                  <div className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-4 py-3 rounded-2xl rounded-tl-sm">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-stone-300 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-stone-300 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }} />
-                      <div className="w-2 h-2 bg-stone-300 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }} />
+                      <div className="w-2 h-2 bg-stone-300 dark:bg-stone-500 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-stone-300 dark:bg-stone-500 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }} />
+                      <div className="w-2 h-2 bg-stone-300 dark:bg-stone-500 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }} />
                     </div>
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export default function Home() {
         </div>
 
         {/* Input area - fixed at bottom */}
-        <div className="border-t border-stone-100 bg-white px-4 py-3 safe-area-bottom">
+        <div className="border-t border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 px-4 py-3 safe-area-bottom">
           <form onSubmit={sendMessage} className="max-w-2xl mx-auto">
             <div className="flex gap-2 items-end">
               <div className="flex-1 relative">
@@ -423,14 +423,14 @@ export default function Home() {
                   placeholder={showAuth ? "Sign in to continue..." : hasStarted ? "Reply..." : "I want to understand..."}
                   disabled={loading || showAuth}
                   rows={1}
-                  className="w-full px-4 py-3 pr-12 rounded-2xl border border-stone-200 focus:outline-none focus:border-stone-300 focus:ring-1 focus:ring-stone-300 disabled:opacity-50 bg-stone-50 resize-none text-[16px] leading-6"
+                  className="w-full px-4 py-3 pr-12 rounded-2xl border border-stone-200 dark:border-stone-700 focus:outline-none focus:border-stone-300 dark:focus:border-stone-600 focus:ring-1 focus:ring-stone-300 dark:focus:ring-stone-600 disabled:opacity-50 bg-stone-50 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500 resize-none text-[16px] leading-6"
                   style={{ minHeight: "48px", maxHeight: "120px" }}
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading || showAuth || !input.trim()}
-                className="p-3 bg-stone-800 text-white rounded-full hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-stone-800 transition flex-shrink-0"
+                className="p-3 bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 rounded-full hover:bg-stone-700 dark:hover:bg-stone-200 disabled:opacity-40 disabled:hover:bg-stone-800 dark:disabled:hover:bg-stone-100 transition flex-shrink-0"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
