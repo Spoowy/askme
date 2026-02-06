@@ -270,6 +270,12 @@ export default function Home() {
         return;
       }
 
+      // Handle API errors
+      if (data.error || !res.ok) {
+        setMessages([...newMessages, { role: "assistant", content: "Something went wrong. Please try again." }]);
+        return;
+      }
+
       // Handle multiple messages with natural delays based on length
       const responseMsgs: string[] = data.messages || (data.message ? [data.message] : []);
       if (responseMsgs.length > 0) {
